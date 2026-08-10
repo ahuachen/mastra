@@ -1,0 +1,23 @@
+{
+  "name": "@repo/bundled-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mastra/core": "latest",
+    "@repo/contracts": "workspace:*",
+    "@repo/logging": "workspace:*",
+    "@repo/orders": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.15",
+    "mastra": "latest",
+    "typescript": "^5.9.3"
+  }
+}
