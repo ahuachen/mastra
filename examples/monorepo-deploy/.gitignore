@@ -1,3 +1,6 @@
 node_modules
 .mastra
 .turbo
+
+# Written by `mastra server deploy` — holds the org and project IDs of whoever ran it.
+.mastra-project.json
