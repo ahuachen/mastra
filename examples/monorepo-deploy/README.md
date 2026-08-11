@@ -12,7 +12,7 @@ failed with repeated `tarball data ... seems to be corrupted` warnings and then 
 
 ## Layout
 
-```
+```text
 packages/
   contracts/    root export, TypeScript source        → compiled into the bundle
   orders/       root export, depends on contracts     → compiled into the bundle
