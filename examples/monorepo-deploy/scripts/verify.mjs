@@ -4,7 +4,7 @@
 // See ../README.md for what each app is meant to show. Run with `pnpm verify`.
 
 import { execFileSync, spawn } from 'node:child_process';
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -42,6 +42,11 @@ const APPS = [
 
 const results = [];
 const tempDirs = [];
+
+/** The filename `DepsService` packs a workspace package under, e.g. `@repo/formatters` → `repo-formatters-1.0.0.tgz`. */
+function tarballName(packageName, version = '1.0.0') {
+  return `${packageName.replace(/^@/, '').replace(/\//g, '-')}-${version}.tgz`;
+}
 
 function check(app, name, ok, detail) {
   results.push({ app, name, ok, detail });
@@ -147,13 +152,11 @@ for (const app of APPS) {
 
   for (const name of app.packed) {
     const spec = dependencies[name];
-    const expected = `file:./workspace-module/${name.replace(/^@/, '').replace(/\//g, '-')}-1.0.0.tgz`;
-    check(app.name, `${name} is declared as a packed tarball`, spec === expected, spec ?? 'not declared');
     check(
       app.name,
-      `${name} tarball exists in the artifact`,
-      existsSync(join(outputDir, expected.replace('file:./', ''))),
-      expected.replace('file:./', ''),
+      `${name} is declared as a packed tarball`,
+      spec === `file:./workspace-module/${tarballName(name)}`,
+      spec ?? 'not declared',
     );
   }
 
@@ -163,6 +166,22 @@ for (const app of APPS) {
     `artifact references exactly ${app.packed.length} tarball(s)`,
     tarballRefs.length === app.packed.length,
     tarballRefs.map(([name]) => name).join(', ') || 'none',
+  );
+
+  // Read the directory rather than trusting the manifest: a tarball packed for a package that was
+  // compiled in is dead weight in the artifact even when nothing references it.
+  const workspaceModuleDir = join(outputDir, 'workspace-module');
+  const packedTarballs = existsSync(workspaceModuleDir)
+    ? readdirSync(workspaceModuleDir)
+        .filter(name => name.endsWith('.tgz'))
+        .sort()
+    : [];
+  const expectedTarballs = app.packed.map(name => tarballName(name)).sort();
+  check(
+    app.name,
+    'workspace-module/ holds exactly the tarballs the artifact needs',
+    packedTarballs.join(',') === expectedTarballs.join(','),
+    packedTarballs.join(', ') || 'empty',
   );
 
   const hasLockfile = existsSync(join(outputDir, 'package-lock.json'));

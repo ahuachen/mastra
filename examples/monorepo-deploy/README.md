@@ -54,17 +54,19 @@ pnpm verify
 `pnpm verify` builds both apps and, for each one, checks that:
 
 1. workspace packages compiled into the bundle are not also declared in `.mastra/output/package.json`
-2. workspace packages the bundle imports at runtime _are_ declared, and their tarball is on disk
-3. the artifact ships a `package-lock.json` when it has no tarballs, and skips it when it does
-4. installing from the manifest alone behaves as described above for that app
-5. the built server boots and its `/workspace` route returns values from every workspace package —
+2. workspace packages the bundle imports at runtime _are_ declared
+3. `workspace-module/` holds exactly those tarballs and no others — read off disk, so a tarball
+   packed for a package that was compiled in fails the run even if nothing references it
+4. the artifact ships a `package-lock.json` when it has no tarballs, and skips it when it does
+5. installing from the manifest alone behaves as described above for that app
+6. the built server boots and its `/workspace` route returns values from every workspace package —
    including the one loaded out of the installed tarball
 
 The last check is the one that catches over-correction. Dropping a workspace package that the bundle
 really does import at runtime would leave the artifact installable but broken at boot with
 `ERR_MODULE_NOT_FOUND`.
 
-Expected output on a fixed deployer is `12/12 checks passed`. Against deployer 1.56 or 1.57 the
+Expected output on a fixed deployer is `13/13 checks passed`. Against deployer 1.56 or 1.57 the
 `bundled-app` checks fail: all three of its workspace packages get declared as tarballs and the
 manifest-only install dies with `ENOENT`.
 
